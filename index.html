@@ -149,11 +149,11 @@
 
 <section>
   <div class="gallery">
-    <img src="C:/travelgo25/static/train-icon.jpeg" alt="Train">
-    <img src="C:/travelgo25/static/hotel.jpg" alt="Hotel">
-    <img src="C:/travelgo25/static/flight-icon.jpeg" alt="Flight">
-    <img src="C:/travelgo25/static/bus-icon.jpeg" alt="Bus">
-  </div>
+  <img src="{{ url_for('static', filename='images/train-icon.jpeg') }}" alt="Train">
+  <img src="{{ url_for('static', filename='images/hotel.jpg') }}" alt="Hotel">
+  <img src="{{ url_for('static', filename='images/flight-icon.jpeg') }}" alt="Flight">
+  <img src="{{ url_for('static', filename='images/bus-icon.jpeg') }}" alt="Bus">
+</div>
 </section>
 
 <section class="features" id="features">
