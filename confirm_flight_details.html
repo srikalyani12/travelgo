@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Confirm Flight Booking | TravelGo</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    h1 {
+      font-size: 2.2rem;
+      margin-bottom: 30px;
+      color: #fcd34d;
+    }
+    .confirmation-box {
+      background: rgba(255,255,255,0.07);
+      padding: 30px 40px;
+      border-radius: 16px;
+      text-align: center;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.3);
+      backdrop-filter: blur(10px);
+    }
+    p {
+      font-size: 1.1rem;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 14px 28px;
+      background: #fcd34d;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #ffe47a;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Confirm Flight Booking</h1>
+  <div class="confirmation-box">
+    <div id="details"></div>
+    <a href="/bookingpayment">Proceed to payment Confirmation</a>
+
+  </div>
+
+  <script>
+    const d = JSON.parse(localStorage.getItem("flightBooking"));
+    document.getElementById("details").innerHTML = `
+      <p><strong>${d.flight}</strong><br>
+      From: ${d.source} → ${d.destination}<br>
+      Seats: ${d.seats}</p>
+    `;
+    function goPay() {
+      window.location.href = "bookingpayment.html";
+    }
+  </script>
+
+</body>
+</html>

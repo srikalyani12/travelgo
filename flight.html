@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Book Flight | TravelGo</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #f0f0f0; }
+    h1 { margin-top: 20px; }
+    input, select, button { margin: 10px; padding: 12px; border-radius: 6px; border: 1px solid #ccc; width: 200px; }
+    .seat { display: inline-block; width: 40px; height: 40px; margin: 5px; background: #ccc; line-height: 40px; cursor: pointer; border-radius: 6px; }
+    .seat.selected { background: #4caf50; color: white; }
+    .seat.occupied { background: #e53935; color: white; cursor: not-allowed; }
+    button { background: #007BFF; color: white; border: none; }
+  </style>
+</head>
+<body>
+  <h1>Book Your Flight</h1>
+  <input type="text" id="source" placeholder="Source">
+  <input type="text" id="destination" placeholder="Destination">
+  <h3>Select Seats</h3>
+  <div id="seats"></div>
+<a href="/confirm_flight_details">Proceed to Flight Confirmation</a>
+
+  <script>
+    const seatsDiv = document.getElementById("seats");
+    for (let i = 1; i <= 30; i++) {
+      let seat = document.createElement("div");
+      seat.className = "seat";
+      seat.innerText = i;
+      seat.onclick = () => {
+        if (!seat.classList.contains("occupied")) seat.classList.toggle("selected");
+      };
+      seatsDiv.appendChild(seat);
+    }
+
+    function proceed() {
+      const source = document.getElementById("source").value;
+      const destination = document.getElementById("destination").value;
+      if (source === "" || destination === "") return alert("Enter source and destination.");
+      const selected = document.querySelectorAll(".seat.selected");
+      if (selected.length === 0) return alert("Select at least one seat.");
+      let seatNumbers = Array.from(selected).map(s => s.innerText).join(", ");
+      localStorage.setItem("flightBooking", JSON.stringify({
+        flight: "TravelGo Air 305",
+        source, destination, seats: seatNumbers
+      }));
+      window.location.href = "confirm_flight_details.html";
+    }
+  </script>
+</body>
+</html>

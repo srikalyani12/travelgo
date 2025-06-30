@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hotel Booking</title>
+  <style>
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+    color: #ffffff65;
+    margin: 0;
+    padding: 0;
+  }
+  h1 {
+    text-align: center;
+    padding: 30px;
+    font-size: 2.5rem;
+    color: #fcd34d;
+    background: rgba(0,0,0,0.4);
+    margin: 0;
+  }
+  form {
+    background: rgba(255, 255, 255, 0.06);
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+    backdrop-filter: blur(10px);
+    text-align: center;
+  }
+  label {
+    display: block;
+    margin: 16px 0 6px;
+    font-size: 1rem;
+  }
+  input, select {
+    padding: 12px 14px;
+    width: 85%;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.15);
+    color: #ffffff40;
+    outline: none;
+    margin-bottom: 20px;
+    font-size: 1rem;
+  }
+  input::placeholder {
+    color: #dddddd46;
+  }
+  input:focus, select:focus {
+    background: rgba(255,255,255,0.25);
+  }
+  button {
+    padding: 14px 28px;
+    background: #fcd34d;
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  button:hover {
+    background: #ffe47a;
+  }
+  .back-btn {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: #4caf50;
+    color: #ffffff;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.95rem;
+  }
+</style>
+</head>
+<body>
+  <h1>Hotel Room Booking</h1>
+  <input id="location" placeholder="Hotel Location">
+  <select id="roomType">
+    <option value="">Select Room Type</option>
+    <option>Deluxe</option>
+    <option>Suite</option>
+    <option>Economy</option>
+  </select>
+  <a href="/confirm_hotel_details">Proceed to hotel Confirmation</a>
+
+  <script>
+    function confirmHotel(){
+      const location=document.getElementById("location").value;
+      const room=document.getElementById("roomType").value;
+      if(!location||!room) return alert("Fill details");
+      localStorage.setItem("hotelBooking", JSON.stringify({hotel:"TravelGo Inn",location,room}));
+      window.location.href="confirm_hotel_details.html";
+    }
+  </script>
+</body>
+</html>

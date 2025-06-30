@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TravelGo | Login</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #141e30, #243b55);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .login-box {
+      background: rgba(255,255,255,0.08);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.6);
+      backdrop-filter: blur(10px);
+    }
+    .login-box h2 {
+      text-align: center;
+      color: #4df0fc;
+      margin-bottom: 10px;
+    }
+    #welcomeMessage {
+      text-align: center;
+      margin-bottom: 15px;
+      color: #aeea00;
+      font-weight: bold;
+    }
+    input, button {
+      display: block;
+      width: 260px;
+      margin: 12px auto;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+    }
+    input {
+      background: #fff;
+      color: #000;
+    }
+    button {
+      background: #fcf94d;
+      color: #000;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #eaae08;
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-box">
+  <h2> TravelGo Login</h2>
+  <div id="welcomeMessage"></div>
+  <h2>Login</h2>
+<form action="/login" method="post">
+  <input type="email" name="email" placeholder="Email" required>
+  <input type="password" name="password" placeholder="Password" required>
+  <button type="submit">Login</button>
+</form>
+</div>
+
+<script>
+// Show welcome message for latest registered user
+const latestName = localStorage.getItem("latestRegisteredUser");
+if (latestName) {
+  document.getElementById("welcomeMessage").innerText = `Welcome, ${latestName}! Please login.`;
+  localStorage.removeItem("latestRegisteredUser");
+}
+
+function loginUser() {
+  const email = document.getElementById("loginEmail").value;
+  const password = document.getElementById("loginPassword").value;
+
+  const users = JSON.parse(localStorage.getItem("users")) || [];
+  const found = users.find(u => u.email === email && u.password === password);
+
+  if (found) {
+    localStorage.setItem("loggedInUser", JSON.stringify(found));
+    alert("Login Successful!");
+    window.location.href = "index.html";
+  } else {
+    alert("Incorrect email or password.");
+  }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TravelGo | Payment</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    h1 {
+      font-size: 2.2rem;
+      margin-bottom: 30px;
+      color: #fcd34d;
+    }
+    .payment-form {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 30px 40px;
+      border-radius: 16px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+      backdrop-filter: blur(12px);
+      text-align: center;
+    }
+    input {
+      padding: 14px 18px;
+      width: 260px;
+      margin: 15px 0;
+      border: none;
+      border-radius: 8px;
+      outline: none;
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      font-size: 1rem;
+      transition: 0.3s;
+    }
+    input::placeholder {
+      color: #ddd;
+    }
+    input:focus {
+      background: rgba(255,255,255,0.25);
+    }
+    button {
+      margin-top: 20px;
+      padding: 14px 28px;
+      background: #fcd34d;
+      border: none;
+      border-radius: 8px;
+      color: #000;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #ffe47a;
+    }
+    .back-btn {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #4caf50;
+      color: #fff;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Payment Details</h1>
+  <div class="payment-form">
+    <input type="text" id="card" placeholder="Enter Card Number"><br>
+    <a href="/bookingsuccess">booking sucess</a>
+    <br>
+    <a class="back-btn" href="dashboard.html">Go to Dashboard</a>
+  </div>
+
+  <script>
+    function payNow() {
+      const card = document.getElementById("card").value;
+      if (card.trim() === "") return alert("Please enter a card number.");
+
+      let allBookings = JSON.parse(localStorage.getItem("allBookings")) || [];
+
+      const modules = ["flightBooking", "busBooking", "trainBooking", "hotelBooking"];
+      let latestBooking = null;
+
+      for (let key of modules) {
+        if (localStorage.getItem(key)) {
+          let data = JSON.parse(localStorage.getItem(key));
+          let details = "";
+          if (key === "flightBooking") details = `${data.flight} | From: ${data.source} To: ${data.destination} | Seats: ${data.seats}`;
+          if (key === "busBooking")    details = `${data.bus} | From: ${data.source} To: ${data.dest} | Seats: ${data.seats}`;
+          if (key === "trainBooking")  details = `${data.train} | From: ${data.source} To: ${data.dest} | Seats: ${data.seats}`;
+          if (key === "hotelBooking")  details = `${data.hotel} | Location: ${data.location} | Room: ${data.room}`;
+          
+          allBookings.push({
+            type: key.replace("Booking", "").charAt(0).toUpperCase() + key.replace("Booking", "").slice(1),
+            details: details
+          });
+
+          localStorage.removeItem(key); // clear after adding to bookings
+        }
+      }
+
+      localStorage.setItem("allBookings", JSON.stringify(allBookings));
+      window.location.href = "bookingsuccess.html";
+    }
+  </script>
+
+</body>
+</html>
