@@ -16,7 +16,7 @@ users_table = dynamodb.Table('travelgo_users')
 bookings_table = dynamodb.Table('travelgo_bookings')
 
 # AWS SNS Setup
-sns_client = boto3.client('sns', region_name='us-east-1')
+sns_client = boto3.client('sns', region_name='ap-south-1')
 SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:084828600922:TravelGoApplication:082a0b6b-e971-4d9f-9bf6-c200e7d9c81d"
 
 def send_sns_notification(subject, message):
