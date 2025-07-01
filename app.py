@@ -50,7 +50,7 @@ def home():
 def register():
     if request.method == 'POST':
         email = request.form['email']
-        response = users_table.get_item(Key={'Email': email})
+        response = users_table.get_item(Key={'email': email})
         if 'Item' in response:
             return render_template('register.html', message="User already exists.")
 
@@ -59,7 +59,7 @@ def register():
             'Name': request.form['name'],
             'Password': request.form['password']
         })
-        return redirect('/login')
+        return redirect(url_for('login'))
     return render_template('register.html')
 
 # User Login
@@ -68,11 +68,11 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        response = users_table.get_item(Key={'Email': email})
+        response = users_table.get_item(Key={'email': email})
         user = response.get('Item')
         if user and user['Password'] == password:
             session['user'] = email
-            return redirect('/')
+            return redirect(url_for('index')
         return render_template('login.html', message="Invalid credentials.")
     return render_template('login.html')
 
