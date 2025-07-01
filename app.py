@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, session, jsonify
 import boto3
+from boto3.dynamodb.conditions import Attr
 from datetime import datetime
 import json
 import uuid
@@ -9,7 +10,7 @@ import os
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
-# AWS DynamoDB Setup
+# AWS DynamoDB Setup — using instance profile credentials
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 users_table = dynamodb.Table('travelgo_users')
 bookings_table = dynamodb.Table('travelgo_bookings')
@@ -17,6 +18,7 @@ bookings_table = dynamodb.Table('travelgo_bookings')
 # AWS SNS Setup
 sns_client = boto3.client('sns', region_name='us-east-1')
 SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:084828600922:TravelGoApplication:082a0b6b-e971-4d9f-9bf6-c200e7d9c81d"
+
 def send_sns_notification(subject, message):
     try:
         sns_client.publish(
@@ -27,7 +29,7 @@ def send_sns_notification(subject, message):
     except Exception as e:
         print(f"SNS error: {e}")
 
-# Dummy data placeholder for seat availability demo
+# Dummy seat data for demo
 dummy_bus_train_data = {
     "Hyderabad_Vijayawada_Orange Travels_08:00 AM": {
         "total_seats": 30,
@@ -50,7 +52,7 @@ def register():
         response = users_table.get_item(Key={'email': email})
         if 'Item' in response:
             return render_template('register.html', message="User already exists.")
-        
+
         users_table.put_item(Item={
             'email': email,
             'name': request.form['name'],
@@ -79,12 +81,12 @@ def dashboard():
     email = session['user']
     user_response = users_table.get_item(Key={'email': email})
     user = user_response.get('Item')
-    
+
     booking_response = bookings_table.scan(
-        FilterExpression=boto3.dynamodb.conditions.Attr('user_email').eq(email)
+        FilterExpression=Attr('user_email').eq(email)
     )
     bookings = sorted(booking_response['Items'], key=lambda x: x['booking_date'], reverse=True)
-    
+
     return render_template('dashboard.html', name=user['name'], bookings=bookings)
 
 @app.route('/cancel_booking/<booking_id>', methods=['POST'])
@@ -94,9 +96,11 @@ def cancel_booking(booking_id):
     try:
         bookings_table.delete_item(Key={'booking_id': booking_id})
         return jsonify({"success": True})
-    except Exception:
+    except Exception as e:
+        print(e)
         return jsonify({"success": False, "message": "Booking not found"}), 404
 
+# Booking Pages
 @app.route('/bus')
 def bus_page():
     return render_template('bus.html')
@@ -147,6 +151,12 @@ def book_service():
         data['user_email'] = session['user']
         data['booking_date'] = datetime.now().isoformat()
         bookings_table.put_item(Item=data)
+
+        send_sns_notification(
+            subject="New Booking Confirmed",
+            message=f"Booking successful for {data['booking_type']} on {data['travel_date']}."
+        )
+
         return jsonify({"success": True, "message": "Booking successful!"})
     except Exception as e:
         print(e)
@@ -209,6 +219,12 @@ def book_selected_seats():
         }
 
         bookings_table.put_item(Item=booking_record)
+
+        send_sns_notification(
+            subject="Seat Booking Successful",
+            message=f"Seats {data['selectedSeats']} booked successfully for {data['travelDate']}."
+        )
+
         return jsonify({"success": True, "redirect": "/dashboard"})
     except Exception as e:
         print(f"Error: {e}")
@@ -221,4 +237,3 @@ def logout():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
-
