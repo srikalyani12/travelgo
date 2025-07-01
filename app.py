@@ -1,23 +1,22 @@
 from flask import Flask, render_template, request, redirect, session, jsonify
-from pymongo import MongoClient
-from bson.objectid import ObjectId
-import os
+import boto3
 from datetime import datetime
 import json
+import uuid
+import os
 
 # Flask Setup
 app = Flask(__name__)
-app.secret_key = 'e0d15ae2faa18025f4e2a0c7dc5a7b8a830791cc83ad7538667ce14ca2ad8bc0'
+app.secret_key = 'your_secret_key_here'
 
-# MongoDB Atlas Setup
-client = MongoClient("mongodb+srv://srikalyani:Yank&2000@cluster0.vnew545.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-db = client['travel_booking_db']
-users_collection = db['travelgo_users']
-trains_collection = db['trains']
-bookings_collection = db['bookings']
+# AWS DynamoDB Setup
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+users_table = dynamodb.Table('travelgo_users')
+bookings_table = dynamodb.Table('travelgo_bookings')
 
-
-SNS_TOPIC_ARN ='arn:aws:sns:us-east-1:724772095615:TravelGoApplication:c70ea6ee-2ed2-4358-82cf-d1e7a615a268'
+# AWS SNS Setup
+sns_client = boto3.client('sns', region_name='us-east-1')
+SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:084828600922:TravelGoApplication:082a0b6b-e971-4d9f-9bf6-c200e7d9c81d"
 def send_sns_notification(subject, message):
     try:
         sns_client.publish(
@@ -26,7 +25,7 @@ def send_sns_notification(subject, message):
             Message=message
         )
     except Exception as e:
-        print(f"SNS error: cloud not send notification- {e}")
+        print(f"SNS error: {e}")
 
 # Dummy data placeholder for seat availability demo
 dummy_bus_train_data = {
@@ -40,7 +39,6 @@ dummy_bus_train_data = {
     }
 }
 
-# Home page
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -49,14 +47,16 @@ def home():
 def register():
     if request.method == 'POST':
         email = request.form['email']
-        if users_collection.find_one({"email": email}):
+        response = users_table.get_item(Key={'email': email})
+        if 'Item' in response:
             return render_template('register.html', message="User already exists.")
-        users_collection.insert_one({
-            "email": email,
-            "name": request.form['name'],
-            "password": request.form['password']
+        
+        users_table.put_item(Item={
+            'email': email,
+            'name': request.form['name'],
+            'password': request.form['password']
         })
-        return redirect('/login')  # ✅ Correct redirect to the /login route
+        return redirect('/login')
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -64,37 +64,39 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        user = users_collection.find_one({"email": email})
+        response = users_table.get_item(Key={'email': email})
+        user = response.get('Item')
         if user and user['password'] == password:
             session['user'] = email
             return redirect('/')
         return render_template('login.html', message="Invalid credentials.")
     return render_template('login.html')
 
-# Dashboard
 @app.route('/dashboard')
 def dashboard():
     if 'user' not in session:
         return redirect('/login')
     email = session['user']
-    user = users_collection.find_one({"email": email})
-    bookings = list(bookings_collection.find({'user_email': email}).sort('booking_date', -1))
+    user_response = users_table.get_item(Key={'email': email})
+    user = user_response.get('Item')
+    
+    booking_response = bookings_table.scan(
+        FilterExpression=boto3.dynamodb.conditions.Attr('user_email').eq(email)
+    )
+    bookings = sorted(booking_response['Items'], key=lambda x: x['booking_date'], reverse=True)
+    
     return render_template('dashboard.html', name=user['name'], bookings=bookings)
 
-
-# Cancel booking
 @app.route('/cancel_booking/<booking_id>', methods=['POST'])
 def cancel_booking(booking_id):
     if 'user' not in session:
         return jsonify({"success": False, "message": "Unauthorized"}), 403
-    result = bookings_collection.delete_one({"_id": ObjectId(booking_id)})
-    if result.deleted_count:
+    try:
+        bookings_table.delete_item(Key={'booking_id': booking_id})
         return jsonify({"success": True})
-    else:
+    except Exception:
         return jsonify({"success": False, "message": "Booking not found"}), 404
 
-
-# Booking pages
 @app.route('/bus')
 def bus_page():
     return render_template('bus.html')
@@ -110,6 +112,7 @@ def flight_page():
 @app.route('/hotel')
 def hotel_page():
     return render_template('hotel.html')
+
 @app.route('/confirm_flight_details')
 def confirm_flight_details():
     return render_template('confirm_flight_details.html')
@@ -134,24 +137,21 @@ def bookingpayment():
 def bookingsuccess():
     return render_template('bookingsuccess.html')
 
-
-# General booking API (for flights, hotels, etc.)
 @app.route('/book_service', methods=['POST'])
 def book_service():
     if 'user' not in session:
         return jsonify({"success": False, "message": "Unauthorized"}), 403
     try:
         data = request.get_json()
+        data['booking_id'] = str(uuid.uuid4())
         data['user_email'] = session['user']
-        data['booking_date'] = datetime.now()
-        bookings_collection.insert_one(data)
+        data['booking_date'] = datetime.now().isoformat()
+        bookings_table.put_item(Item=data)
         return jsonify({"success": True, "message": "Booking successful!"})
     except Exception as e:
         print(e)
         return jsonify({"success": False, "message": "Booking failed."}), 500
 
-
-# Select seats page (for bus/train)
 @app.route('/select_seats')
 def select_seats():
     if 'user' not in session:
@@ -180,8 +180,6 @@ def select_seats():
                            num_persons=num_persons,
                            booked_seats_json=json.dumps(existing_booked_seats))
 
-
-# Booking selected seats
 @app.route('/book_selected_seats', methods=['POST'])
 def book_selected_seats():
     if 'user' not in session:
@@ -194,6 +192,7 @@ def book_selected_seats():
             return jsonify({"success": False, "message": "Seat count mismatch."}), 400
 
         booking_record = {
+            "booking_id": str(uuid.uuid4()),
             "user_email": session['user'],
             "booking_type": data.get('bookingType'),
             "name": data.get('name'),
@@ -206,21 +205,19 @@ def book_selected_seats():
             "selected_seats": data.get('selectedSeats'),
             "price_per_person": data.get('pricePerPerson'),
             "total_price": data.get('totalPrice'),
-            "booking_date": datetime.now()
+            "booking_date": datetime.now().isoformat()
         }
 
-        bookings_collection.insert_one(booking_record)
+        bookings_table.put_item(Item=booking_record)
         return jsonify({"success": True, "redirect": "/dashboard"})
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({"success": False, "message": "Failed to book seats."}), 500
 
-
-# Logout
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect('/')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=80)
