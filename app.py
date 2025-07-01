@@ -11,7 +11,7 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
 # AWS DynamoDB Setup — using instance profile credentials
-dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+dynamodb = boto3.resource('dynamodb', region_name='ap-south-1')
 users_table = dynamodb.Table('travelgo_users')
 bookings_table = dynamodb.Table('travelgo_bookings')
 
